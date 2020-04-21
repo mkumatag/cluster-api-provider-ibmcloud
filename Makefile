@@ -56,13 +56,14 @@ $(GOBIN):
 
 work: $(GOBIN)
 
+.PHONY: kubebuilder
 kubebuilder:
 	echo "checking if kubebuilder exists or not"
 	if [ ! -d "$(KUBEBUILDER_PATH)/kubebuilder" ]; then \
-		curl -LO https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_linux_amd64.tar.gz \
-		&& tar xzf kubebuilder_1.0.8_linux_amd64.tar.gz \
-		&& mv kubebuilder_1.0.8_linux_amd64 kubebuilder && mv kubebuilder $(KUBEBUILDER_PATH) \
-		&& rm kubebuilder_1.0.8_linux_amd64.tar.gz; \
+		curl -LO https://github.com/kubernetes-sigs/kubebuilder/releases/download/v1.0.8/kubebuilder_1.0.8_darwin_amd64.tar.gz \
+		&& tar xzf kubebuilder_1.0.8_darwin_amd64.tar.gz \
+		&& mv kubebuilder_1.0.8_darwin_amd64 kubebuilder && mv kubebuilder $(KUBEBUILDER_PATH) \
+		&& rm kubebuilder_1.0.8_darwin_amd64.tar.gz; \
 	fi
 
 depend: work kubebuilder
@@ -158,6 +159,7 @@ mgr:
 		-ldflags $(LDFLAGS) \
 		-o bin/manager \
 		cmd/manager/main.go
+.PHONY: cmd
 cmd:
 	CGO_ENABLED=0 GOOS=$(GOOS) go build \
 		-ldflags $(LDFLAGS) \
