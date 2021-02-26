@@ -192,7 +192,7 @@ func (m *PowerVSMachineScope) PatchObject() error {
 }
 
 func (m *PowerVSMachineScope) DeleteMachine() error {
-	return nil
+	return m.IBMPowerVSClient.InstanceClient.Delete(m.IBMPowerVSMachine.Status.InstanceID, m.IBMPowerVSMachine.Spec.CloudInstanceID, time.Hour)
 }
 
 //var hackCloudData = `#cloud-config
