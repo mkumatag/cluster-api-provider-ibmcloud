@@ -1,0 +1,37 @@
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSCluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+  name: ibm-powervs-1
+spec:
+  cloudInstanceID: "7845d372-d4e1-46b8-91fc-41051c984601"
+  network: "0ad342f5-f461-414a-a870-e2f2a2b7fa0c"
+---
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+  name: ibm-powervs-1
+  namespace: default
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+      - 192.168.0.0/16
+    serviceDomain: cluster.local
+    services:
+      cidrBlocks:
+      - 10.128.0.0/12
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: IBMPowerVSCluster
+    name: ibm-powervs-1
+    namespace: default
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: KubeadmControlPlane
+    name: ibm-powervs-1-control-plane
+    namespace: default

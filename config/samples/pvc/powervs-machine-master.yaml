@@ -1,0 +1,125 @@
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Machine
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+    cluster.x-k8s.io/control-plane: ""  
+  name: capi-test
+  namespace: default
+spec:
+  bootstrap:
+    configRef:
+      apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+      kind: KubeadmConfig
+      name: controlplane-1-config
+      namespace: default
+  clusterName: ibm-powervs-1
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: IBMPowerVSMachine
+    name: capi-test
+    namespace: default
+  version: v1.19.8
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSMachine
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+    cluster.x-k8s.io/control-plane: "true"  
+  name: capi-test
+spec:
+  name: capi-test
+  cloudInstanceID: "7845d372-d4e1-46b8-91fc-41051c984601"
+  sshKey: mkumatag-pub-key
+  image: "71a00ad7-58e6-4903-90f3-82437bc1f145"
+  machineType: s922
+  processor: shared
+  cores: "0.25"
+  memory: "8"
+  network: "0ad342f5-f461-414a-a870-e2f2a2b7fa0c"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: KubeadmConfig
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+    cluster.x-k8s.io/control-plane: ""
+  name: controlplane-1-config
+  namespace: default
+spec:
+  clusterConfiguration:
+    apiServer:
+      certSANs:
+      - localhost
+      - 127.0.0.1
+    clusterName: ibm-powervs-1
+    controllerManager:
+      extraArgs:
+        enable-hostpath-provisioner: "true"
+    dns: {}
+    etcd: {}
+    kubernetesVersion: v1.19.8
+    networking:
+      dnsDomain: cluster.local
+      podSubnet: 192.168.0.0/16
+      serviceSubnet: 10.128.0.0/12
+    scheduler: {}
+  initConfiguration:
+    localAPIEndpoint:
+      advertiseAddress: ""
+      bindPort: 0
+    nodeRegistration:
+      criSocket: /var/run/containerd/containerd.sock
+      kubeletExtraArgs:
+        eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSMachineTemplate
+metadata:
+  name: ibm-powervs-1-control-plane
+  namespace: default
+spec:
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+kind: KubeadmControlPlane
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ibm-powervs-1
+  name: ibm-powervs-1-control-plane
+  namespace: default
+spec:
+  infrastructureTemplate:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: IBMPowerVSMachineTemplate
+    name: ibm-powervs-1-control-plane
+    namespace: default
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        certSANs:
+        - localhost
+        - 127.0.0.1
+      controllerManager: 
+        extraArgs:
+          enable-hostpath-provisioner: "true"
+      dns: {}
+      etcd: {}
+      networking: {}
+      scheduler: {}
+    initConfiguration:
+      localAPIEndpoint:
+        advertiseAddress: ""
+        bindPort: 0
+      nodeRegistration:
+        criSocket: /var/run/containerd/containerd.sock
+        kubeletExtraArgs:
+          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+    joinConfiguration:
+      discovery: {}
+      nodeRegistration:
+        criSocket: /var/run/containerd/containerd.sock
+        kubeletExtraArgs:
+          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+  replicas: 1
+  version: v1.19.8
