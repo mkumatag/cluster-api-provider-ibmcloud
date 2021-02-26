@@ -44,7 +44,8 @@ type IBMPowerVSClusterSpec struct {
 type IBMPowerVSClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Ready       bool               `json:"ready"`
+	Ready bool `json:"ready"`
+	// +optional
 	APIEndpoint PowerVSAPIEndpoint `json:"apiEndpoint,omitempty"`
 }
 

@@ -3,20 +3,20 @@ kind: Machine
 metadata:
   labels:
     cluster.x-k8s.io/cluster-name: ibm-powervs-1
-  name: worker-4
+  name: worker-3
   namespace: default
 spec:
   bootstrap:
     configRef:
       apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
       kind: KubeadmConfig
-      name: worker-4-config
+      name: worker-3-config
       namespace: default
   clusterName: ibm-powervs-1
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
     kind: IBMPowerVSMachine
-    name: worker-4
+    name: worker-3
     namespace: default
   version: v1.19.8
 ---
@@ -25,9 +25,9 @@ kind: IBMPowerVSMachine
 metadata:
   labels:
     cluster.x-k8s.io/cluster-name: ibm-powervs-1
-  name: worker-4
+  name: worker-3
 spec:
-  name: worker-4
+  name: worker-3
   cloudInstanceID: "7845d372-d4e1-46b8-91fc-41051c984601"
   sshKey: mkumatag-pub-key
   image: "71a00ad7-58e6-4903-90f3-82437bc1f145"
@@ -42,7 +42,7 @@ kind: KubeadmConfig
 metadata:
   labels:
     cluster.x-k8s.io/cluster-name: ibm-powervs-1
-  name: worker-4-config
+  name: worker-3-config
   namespace: default
 spec:
   joinConfiguration:

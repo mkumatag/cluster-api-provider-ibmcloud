@@ -4,7 +4,7 @@ metadata:
   labels:
     cluster.x-k8s.io/cluster-name: ibm-powervs-1
     cluster.x-k8s.io/control-plane: ""  
-  name: capi-test
+  name: controlplane-1
   namespace: default
 spec:
   bootstrap:
@@ -17,7 +17,7 @@ spec:
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
     kind: IBMPowerVSMachine
-    name: capi-test
+    name: controlplane-1
     namespace: default
   version: v1.19.8
 ---
@@ -27,9 +27,9 @@ metadata:
   labels:
     cluster.x-k8s.io/cluster-name: ibm-powervs-1
     cluster.x-k8s.io/control-plane: "true"  
-  name: capi-test
+  name: controlplane-1
 spec:
-  name: capi-test
+  name: controlplane-1
   cloudInstanceID: "7845d372-d4e1-46b8-91fc-41051c984601"
   sshKey: mkumatag-pub-key
   image: "71a00ad7-58e6-4903-90f3-82437bc1f145"
@@ -72,6 +72,8 @@ spec:
     nodeRegistration:
       criSocket: /var/run/containerd/containerd.sock
       kubeletExtraArgs:
+        cloud-provider: external
+        provider-id: ibmpowervs://ibm-powervs-1/'{{ v1.local_hostname }}'
         eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
@@ -114,12 +116,16 @@ spec:
       nodeRegistration:
         criSocket: /var/run/containerd/containerd.sock
         kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: ibmpowervs://ibm-powervs-1/'{{ v1.local_hostname }}'
           eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
     joinConfiguration:
       discovery: {}
       nodeRegistration:
         criSocket: /var/run/containerd/containerd.sock
         kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: ibmpowervs://ibm-powervs-1/'{{ v1.local_hostname }}'
           eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
   replicas: 1
   version: v1.19.8
