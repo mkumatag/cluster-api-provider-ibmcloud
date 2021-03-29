@@ -21,6 +21,7 @@ import (
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/cloud/scope"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -49,7 +50,7 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result
 
 	// your logic here
 
-	// Fetch the IBMVPCCluster instance
+	// Fetch the IBMPowerVSCluster instance
 	ibmCluster := &infrastructurev1alpha3.IBMPowerVSCluster{}
 	err := r.Get(ctx, req.NamespacedName, ibmCluster)
 	if err != nil {
@@ -96,9 +97,24 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result
 }
 
 func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.PowerVSClusterScope) (ctrl.Result, error) {
-	if !controllerutil.ContainsFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.ClusterFinalizer) {
-		controllerutil.AddFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.ClusterFinalizer)
+	if !controllerutil.ContainsFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer) {
+		controllerutil.AddFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer)
 		return ctrl.Result{}, nil
+	}
+
+	controlEP := ""
+	if clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress != nil {
+		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress
+	} else if clusterScope.IBMPowerVSCluster.Spec.VIP.Address != nil {
+		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.Address
+	}
+
+	if controlEP != "" {
+		clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+			Host: controlEP,
+			Port: 6443,
+		}
+		clusterScope.IBMPowerVSCluster.Status.Ready = true
 	}
 
 	//if clusterScope.IBMPowerVSCluster.Status.APIEndpoint.PortID == nil {
@@ -125,7 +141,7 @@ func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScop
 	//	}
 	//	clusterScope.IBMPowerVSCluster.Status.Ready = true
 	//}
-	clusterScope.IBMPowerVSCluster.Status.Ready = true
+
 	return ctrl.Result{}, nil
 }
 
@@ -133,7 +149,7 @@ func (r *IBMPowerVSClusterReconciler) reconcileDelete(clusterScope *scope.PowerV
 	//if err := clusterScope.DeletePort(); err != nil {
 	//	return ctrl.Result{}, errors.Wrap(err, "failed to delete a port for APIEndpoint")
 	//} else {
-	controllerutil.RemoveFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.ClusterFinalizer)
+	controllerutil.RemoveFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer)
 	return ctrl.Result{}, nil
 	//}
 }

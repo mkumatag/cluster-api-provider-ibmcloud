@@ -7,7 +7,10 @@ metadata:
   name: ibm-powervs-1
 spec:
   cloudInstanceID: "7845d372-d4e1-46b8-91fc-41051c984601"
-  network: "0ad342f5-f461-414a-a870-e2f2a2b7fa0c"
+  network: "f3895fde-e53e-4243-afa7-e11a1fb33726"
+  vip:
+    address: 192.168.151.101
+    externalAddress: 158.175.162.101
 ---
 apiVersion: cluster.x-k8s.io/v1alpha3
 kind: Cluster
