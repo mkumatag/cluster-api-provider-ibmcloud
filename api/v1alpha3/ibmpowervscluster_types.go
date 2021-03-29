@@ -24,6 +24,12 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+const (
+	// IBMPowerVSClusterFinalizer allows IBMPowerVSClusterReconciler to clean up resources associated with IBMPowerVSCluster before
+	// removing it from the apiserver.
+	IBMPowerVSClusterFinalizer = "ibmpowervscluster.infrastructure.cluster.x-k8s.io"
+)
+
 // IBMPowerVSClusterSpec defines the desired state of IBMPowerVSCluster
 type IBMPowerVSClusterSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
@@ -35,9 +41,18 @@ type IBMPowerVSClusterSpec struct {
 	// Network is network ID used for the VSI
 	Network string `json:"network"`
 
+	// VIP is a virtual IP address used for IP failover
+	VIP PowerVSVIP `json:"vip"`
+
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
 	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint"`
+}
+
+type PowerVSVIP struct {
+	Address *string `json:"address"`
+	// +optional
+	ExternalAddress *string `json:"externalAddress"`
 }
 
 // IBMPowerVSClusterStatus defines the observed state of IBMPowerVSCluster
@@ -51,7 +66,8 @@ type IBMPowerVSClusterStatus struct {
 
 type PowerVSAPIEndpoint struct {
 	Address *string `json:"address"`
-	//InternalAddress *string `json:"internalAddress"`
+	// +optional
+	// ExternalAddress *string `json:"externalAddress"`
 	// PortID is the ID for the network port gets created
 	//PortID *string `json:"portID"`
 }

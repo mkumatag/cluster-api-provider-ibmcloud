@@ -27,7 +27,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,7 +57,6 @@ func (r *IBMPowerVSMachineReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 		return ctrl.Result{}, err
 	}
-	fmt.Printf("ibmPowerVSMachine spec: %+v", ibmPowerVSMachine.Spec)
 
 	// Fetch the Machine.
 	machine, err := util.GetOwnerMachine(ctx, r.Client, ibmPowerVSMachine.ObjectMeta)
@@ -69,8 +67,6 @@ func (r *IBMPowerVSMachineReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		log.Info("Machine Controller has not yet set OwnerRef")
 		return ctrl.Result{}, nil
 	}
-
-	fmt.Printf("machine spec: %+v", machine.Spec)
 
 	// Fetch the Cluster.
 	cluster, err := util.GetClusterFromMetadata(ctx, r.Client, ibmPowerVSMachine.ObjectMeta)
@@ -129,17 +125,21 @@ func (r *IBMPowerVSMachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *IBMPowerVSMachineReconciler) reconcileDelete(scope *scope.PowerVSMachineScope) (_ ctrl.Result, reterr error) {
 	scope.Info("Handling deleted IBMPowerVSMachine")
 
+	defer func() {
+		if reterr == nil {
+			// VSI is deleted so remove the finalizer.
+			controllerutil.RemoveFinalizer(scope.IBMPowerVSMachine, infrastructurev1alpha3.IBMPowerVSMachineFinalizer)
+		}
+	}()
+
+	if scope.IBMPowerVSMachine.Status.InstanceID == "" {
+		scope.Info("InstanceID is not yet set, hence not invoking the powervs API to delete the instance")
+		return ctrl.Result{}, nil
+	}
 	if err := scope.DeleteMachine(); err != nil {
 		scope.Info("error deleting IBMPowerVSMachine")
 		return ctrl.Result{}, errors.Wrapf(err, "error deleting IBMPowerVSMachine %s/%s", scope.IBMPowerVSMachine.Namespace, scope.IBMPowerVSMachine.Spec.Name)
 	}
-
-	defer func() {
-		if reterr == nil {
-			// VSI is deleted so remove the finalizer.
-			controllerutil.RemoveFinalizer(scope.IBMPowerVSMachine, infrastructurev1alpha3.MachineFinalizer)
-		}
-	}()
 
 	return ctrl.Result{}, nil
 }
@@ -150,7 +150,7 @@ func (r *IBMPowerVSMachineReconciler) getOrCreate(scope *scope.PowerVSMachineSco
 }
 
 func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machineScope *scope.PowerVSMachineScope) (ctrl.Result, error) {
-	controllerutil.AddFinalizer(machineScope.IBMPowerVSMachine, infrastructurev1alpha3.MachineFinalizer)
+	controllerutil.AddFinalizer(machineScope.IBMPowerVSMachine, infrastructurev1alpha3.IBMPowerVSMachineFinalizer)
 
 	// Make sure bootstrap data is available and populated.
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
@@ -160,7 +160,7 @@ func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machi
 
 	ins, err := r.getOrCreate(machineScope)
 	if err != nil {
-		return ctrl.Result{}, errors.Wrapf(err, "failed to reconcile VSI for IBMVPCMachine %s/%s", machineScope.IBMPowerVSMachine.Namespace, machineScope.IBMPowerVSMachine.Name)
+		return ctrl.Result{}, errors.Wrapf(err, "failed to reconcile VSI for IBMPowerVSMachine %s/%s", machineScope.IBMPowerVSMachine.Namespace, machineScope.IBMPowerVSMachine.Name)
 	}
 
 	if ins != nil {
@@ -192,30 +192,32 @@ func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machi
 		}
 		machineScope.Info(*ins.PvmInstanceID)
 	}
-	_, ok := machineScope.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
+	//_, ok := machineScope.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
 	machineScope.IBMPowerVSMachine.Spec.ProviderID = pointer.StringPtr(fmt.Sprintf("ibmpowervs://%s/%s", machineScope.Machine.Spec.ClusterName, machineScope.IBMPowerVSMachine.Name))
-	if ok {
-		//machineScope.IBMPowerVSMachine.Status.Ready = true
-		for _, address := range machineScope.IBMPowerVSMachine.Status.Addresses {
-			//spew.Dump(machineScope)
-			//if address.Type == v1.NodeExternalIP {
-			if address.Type == v1.NodeInternalIP {
-				machineScope.IBMPowerVSCluster.Status.APIEndpoint = infrastructurev1alpha3.PowerVSAPIEndpoint{
-					Address: &address.Address,
-				}
-				machineScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
-					Host: address.Address,
-					Port: 6443,
+	/*
+		if ok {
+			//machineScope.IBMPowerVSMachine.Status.Ready = true
+			for _, address := range machineScope.IBMPowerVSMachine.Status.Addresses {
+				//spew.Dump(machineScope)
+				//if address.Type == v1.NodeExternalIP {
+				if address.Type == v1.NodeInternalIP {
+					machineScope.IBMPowerVSCluster.Status.APIEndpoint = infrastructurev1alpha3.PowerVSAPIEndpoint{
+						Address: &address.Address,
+					}
+					machineScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+						Host: address.Address,
+						Port: 6443,
+					}
 				}
 			}
+			if err := r.Client.Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
+				return ctrl.Result{}, err
+			}
+			if err := r.Client.Status().Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
+				return ctrl.Result{}, err
+			}
 		}
-		if err := r.Client.Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
-			return ctrl.Result{}, err
-		}
-		if err := r.Client.Status().Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
-			return ctrl.Result{}, err
-		}
-	}
+	*/
 
 	return ctrl.Result{}, nil
 }

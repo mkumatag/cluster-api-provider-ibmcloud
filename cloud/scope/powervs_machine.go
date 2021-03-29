@@ -115,7 +115,6 @@ func (m *PowerVSMachineScope) ensureInstanceUnique(instanceName string) (*models
 		return nil, err
 	}
 	for _, ins := range instances.PvmInstances {
-		fmt.Printf("ServerName: %s, compare with: %s", *ins.ServerName, instanceName)
 		if *ins.ServerName == instanceName {
 			return ins, nil
 		}
@@ -166,7 +165,7 @@ func (m *PowerVSMachineScope) CreateMachine() (*models.PVMInstanceReference, err
 					//IPAddress: address,
 				},
 			},
-			ServerName: &s.Name,
+			ServerName: &m.IBMPowerVSMachine.Name,
 			Memory:     &memory,
 			Processors: &cores,
 			ProcType:   &s.Processor,

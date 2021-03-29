@@ -38,10 +38,64 @@ spec:
             description: IBMPowerVSMachineTemplateSpec defines the desired state of
               IBMPowerVSMachineTemplate
             properties:
-              foo:
-                description: Foo is an example field of IBMPowerVSMachineTemplate.
-                  Edit IBMPowerVSMachineTemplate_types.go to remove/update
-                type: string
+              template:
+                properties:
+                  spec:
+                    description: IBMPowerVSMachineSpec defines the desired state of
+                      IBMPowerVSMachine
+                    properties:
+                      cloudInstanceID:
+                        description: CloudInstanceID is the id of the power cloud
+                          instance where the vsi instance will get deployed
+                        type: string
+                      cores:
+                        description: Cores is Number of processors allocated
+                        type: string
+                      image:
+                        description: 'Image is the id of OS image which would be install
+                          on the instance. Example: c57eef35-ea0b-45d7-b864-4b0d4893425b
+                          TODO: allow user to specify a image name is much reasonable.
+                          Example: ibm-ubuntu-18-04-1-minimal-amd64-2'
+                        type: string
+                      machineType:
+                        description: MachineType is the System type used to host the
+                          vsi
+                        type: string
+                      memory:
+                        description: Memory is Amount of memory allocated (in GB)
+                        type: string
+                      name:
+                        description: Name of the instance
+                        type: string
+                      network:
+                        description: Network is network ID used for the VSI
+                        type: string
+                      processor:
+                        description: 'Processor is the processor type, e.g: dedicated,
+                          shared, capped'
+                        type: string
+                      providerID:
+                        description: ProviderID is the unique identifier as specified
+                          by the cloud provider.
+                        type: string
+                      sshKey:
+                        description: SSHKey is the name of the SSH key pair provided
+                          to the vsi for authenticating users
+                        type: string
+                    required:
+                    - cloudInstanceID
+                    - cores
+                    - image
+                    - machineType
+                    - memory
+                    - network
+                    - processor
+                    type: object
+                required:
+                - spec
+                type: object
+            required:
+            - template
             type: object
           status:
             description: IBMPowerVSMachineTemplateStatus defines the observed state
