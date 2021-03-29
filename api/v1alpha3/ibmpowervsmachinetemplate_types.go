@@ -25,11 +25,11 @@ import (
 
 // IBMPowerVSMachineTemplateSpec defines the desired state of IBMPowerVSMachineTemplate
 type IBMPowerVSMachineTemplateSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Template IBMPowerVSMachineTemplateResource `json:"template"`
+}
 
-	// Foo is an example field of IBMPowerVSMachineTemplate. Edit IBMPowerVSMachineTemplate_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type IBMPowerVSMachineTemplateResource struct {
+	Spec IBMPowerVSMachineSpec `json:"spec"`
 }
 
 // IBMPowerVSMachineTemplateStatus defines the observed state of IBMPowerVSMachineTemplate
