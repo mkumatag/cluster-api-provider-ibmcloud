@@ -21,7 +21,6 @@ import (
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/cloud/scope"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -101,20 +100,7 @@ func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScop
 		return ctrl.Result{}, nil
 	}
 
-	controlEP := ""
-	if clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress != nil {
-		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress
-	} else if clusterScope.IBMPowerVSCluster.Spec.VIP.Address != nil {
-		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.Address
-	}
-
-	if controlEP != "" {
-		clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
-			Host: controlEP,
-			Port: 6443,
-		}
-		clusterScope.IBMPowerVSCluster.Status.Ready = true
-	}
+	clusterScope.IBMPowerVSCluster.Status.Ready = true
 
 	//if clusterScope.IBMPowerVSCluster.Status.APIEndpoint.PortID == nil {
 	//	port, err := clusterScope.CreatePort()

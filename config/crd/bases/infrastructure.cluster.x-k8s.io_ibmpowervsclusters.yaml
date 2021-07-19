@@ -58,20 +58,9 @@ spec:
               network:
                 description: Network is network ID used for the VSI
                 type: string
-              vip:
-                description: VIP is a virtual IP address used for IP failover
-                properties:
-                  address:
-                    type: string
-                  externalAddress:
-                    type: string
-                required:
-                - address
-                type: object
             required:
             - cloudInstanceID
             - network
-            - vip
             type: object
           status:
             description: IBMPowerVSClusterStatus defines the observed state of IBMPowerVSCluster
