@@ -4,7 +4,6 @@ metadata:
   labels:
     cluster.x-k8s.io/cluster-name: "${CLUSTER_NAME}"
   name: "${CLUSTER_NAME}"
-  #namespace: "${NAMESPACE}"
 spec:
   clusterNetwork:
     pods:
@@ -18,12 +17,10 @@ spec:
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
     kind: IBMPowerVSCluster
     name: "${CLUSTER_NAME}"
-    #namespace: "${NAMESPACE}"
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
     kind: KubeadmControlPlane
     name: "${CLUSTER_NAME}-control-plane"
-    #namespace: "${NAMESPACE}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
 kind: IBMPowerVSCluster
@@ -34,15 +31,14 @@ metadata:
 spec:
   cloudInstanceID: "${IBMPOWERVS_SERVICE_INSTANCE_ID}"
   network: "${IBMPOWERVS_NETWORK_ID}"
-  vip:
-    address: "${IBMPOWERVS_VIP}"
-    externalAddress: "${IBMPOWERVS_VIP_EXTERNAL}"
+  controlPlaneEndpoint:
+    host: "${IBMPOWERVS_VIP_EXTERNAL}"
+    port: 6443
 ---
 kind: KubeadmControlPlane
 apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
-  #namespace: "${NAMESPACE}"
 spec:
   version: "${KUBERNETES_VERSION}"
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
@@ -50,33 +46,24 @@ spec:
     kind: IBMPowerVSMachineTemplate
     apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
     name: "${CLUSTER_NAME}-control-plane"
-    #namespace: "${NAMESPACE}"
   kubeadmConfigSpec:
     clusterConfiguration:
       apiServer:
         certSANs:
-          - localhost
-          - 127.0.0.1
           - "${IBMPOWERVS_VIP}"
           - "${IBMPOWERVS_VIP_EXTERNAL}"
       controlPlaneEndpoint: ${IBMPOWERVS_VIP}:6443
       controllerManager:
         extraArgs:
           enable-hostpath-provisioner: "true"
-      dns: { }
-      etcd: { }
-      networking: { }
-      scheduler: { }
     initConfiguration:
-      localAPIEndpoint:
-        advertiseAddress: ""
-        bindPort: 0
       nodeRegistration:
         criSocket: /var/run/containerd/containerd.sock
         kubeletExtraArgs:
           cloud-provider: external
           provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
           eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+        name: '{{ v1.local_hostname }}'
     joinConfiguration:
       discovery:
         bootstrapToken:
@@ -90,16 +77,11 @@ spec:
           cloud-provider: external
           provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
           eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+        name: '{{ v1.local_hostname }}'
     useExperimentalRetryJoin: true
     preKubeadmCommands:
       - hostname "{{ v1.local_hostname }}"
       - echo "{{ v1.local_hostname }}" >/etc/hostname
-      - |
-        cat <<EOF > /etc/cloud/cloud.cfg.d/01_disable_cloud_nw.cfg
-        #cloud-config
-        network:
-          config: disabled
-        EOF
     files:
       - path: /etc/keepalived/keepalived.conf
         content: |
@@ -260,36 +242,6 @@ metadata:
 spec:
   template:
     spec:
-      clusterConfiguration:
-        apiServer:
-          certSANs:
-            - localhost
-            - 127.0.0.1
-            - "${IBMPOWERVS_VIP}"
-            - "${IBMPOWERVS_VIP_EXTERNAL}"
-        clusterName: ${CLUSTER_NAME}
-        controlPlaneEndpoint: ${IBMPOWERVS_VIP}:6443
-        controllerManager:
-          extraArgs:
-            enable-hostpath-provisioner: "true"
-        dns: {}
-        etcd: {}
-        kubernetesVersion: v1.19.8
-        networking:
-          dnsDomain: cluster.local
-          podSubnet: 192.168.0.0/16
-          serviceSubnet: 10.128.0.0/12
-        scheduler: {}
-      initConfiguration:
-        localAPIEndpoint:
-          advertiseAddress: ""
-          bindPort: 0
-        nodeRegistration:
-          criSocket: /var/run/containerd/containerd.sock
-          kubeletExtraArgs:
-            cloud-provider: external
-            provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
-            eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
       joinConfiguration:
         discovery:
           bootstrapToken:
@@ -303,12 +255,7 @@ spec:
             cloud-provider: external
             provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
             eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+          name: '{{ v1.local_hostname }}'
       preKubeadmCommands:
         - hostname "{{ v1.local_hostname }}"
         - echo "{{ v1.local_hostname }}" >/etc/hostname
-        - |
-          cat <<EOF > /etc/cloud/cloud.cfg.d/01_disable_cloud_nw.cfg
-          #cloud-config
-          network:
-            config: disabled
-          EOF

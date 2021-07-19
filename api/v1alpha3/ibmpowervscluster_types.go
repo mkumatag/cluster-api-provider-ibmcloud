@@ -41,9 +41,6 @@ type IBMPowerVSClusterSpec struct {
 	// Network is network ID used for the VSI
 	Network string `json:"network"`
 
-	// VIP is a virtual IP address used for IP failover
-	VIP PowerVSVIP `json:"vip"`
-
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
 	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint"`
