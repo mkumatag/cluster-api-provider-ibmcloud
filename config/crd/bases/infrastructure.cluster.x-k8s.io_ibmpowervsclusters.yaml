@@ -58,20 +58,17 @@ spec:
               network:
                 description: Network is network ID used for the VSI
                 type: string
-              vip:
-                description: VIP is a virtual IP address used for IP failover
-                properties:
-                  address:
-                    type: string
-                  externalAddress:
-                    type: string
-                required:
-                - address
-                type: object
+              vpcID:
+                description: VPCID is the ID of the VPC to be used for Load Balancers
+                type: string
+              vpcRegion:
+                description: VPCRegion is the region for the VPC
+                type: string
             required:
             - cloudInstanceID
             - network
-            - vip
+            - vpcID
+            - vpcRegion
             type: object
           status:
             description: IBMPowerVSClusterStatus defines the observed state of IBMPowerVSCluster
@@ -80,8 +77,14 @@ spec:
                 properties:
                   address:
                     type: string
+                  load_balancer_id:
+                    type: string
+                  pool_id:
+                    type: string
                 required:
                 - address
+                - load_balancer_id
+                - pool_id
                 type: object
               ready:
                 description: 'INSERT ADDITIONAL STATUS FIELD - define observed state

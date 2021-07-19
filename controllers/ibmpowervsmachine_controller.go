@@ -27,6 +27,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/utils/pointer"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha3"
 	"sigs.k8s.io/cluster-api/util"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -182,6 +183,20 @@ func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machi
 					Address: network.ExternalIP,
 				})
 			}
+			_, ok := machineScope.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
+			if ok {
+				if _, err := machineScope.CreateLoadBalancerPoolMember(
+					machineScope.IBMPowerVSCluster.Status.APIEndpoint.LoadBalancerID,
+					machineScope.IBMPowerVSCluster.Status.APIEndpoint.PoolID,
+					&network.IPAddress, int64(machineScope.APIServerPort())); err != nil {
+					return ctrl.Result{}, errors.Wrapf(err, "failed to add the member %s into the pool %s",
+						network.IPAddress, *machineScope.IBMPowerVSCluster.Status.APIEndpoint.LoadBalancerID)
+				}
+				pollErr := machineScope.WaitForUpdateLB(machineScope.IBMPowerVSCluster.Status.APIEndpoint.LoadBalancerID)
+				if err != nil {
+					return ctrl.Result{}, errors.Wrapf(pollErr, "failed to update the LB")
+				}
+			}
 		}
 		machineScope.IBMPowerVSMachine.Status.Addresses = addresses
 		if instance.Health != nil {
@@ -195,6 +210,7 @@ func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machi
 	}
 	//_, ok := machineScope.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
 	machineScope.IBMPowerVSMachine.Spec.ProviderID = pointer.StringPtr(fmt.Sprintf("ibmpowervs://%s/%s", machineScope.Machine.Spec.ClusterName, machineScope.IBMPowerVSMachine.Name))
+
 	/*
 		if ok {
 			//machineScope.IBMPowerVSMachine.Status.Ready = true

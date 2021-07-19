@@ -41,12 +41,47 @@ type IBMPowerVSClusterSpec struct {
 	// Network is network ID used for the VSI
 	Network string `json:"network"`
 
-	// VIP is a virtual IP address used for IP failover
-	VIP PowerVSVIP `json:"vip"`
+	// VPCID is the ID of the VPC to be used for Load Balancers
+	VPCID string `json:"vpcID"`
+
+	// VPCRegion is the region for the VPC
+	VPCRegion string `json:"vpcRegion"`
 
 	// ControlPlaneEndpoint represents the endpoint used to communicate with the control plane.
 	// +optional
 	ControlPlaneEndpoint clusterv1.APIEndpoint `json:"controlPlaneEndpoint"`
+
+	// ControlPlaneEndpointLoadBalancer represents the LoadBalancer used for ControlPlaneEndpoint.
+	// +optional
+	ControlPlaneEndpointLoadBalancer LoadBalancer `json:"controlPlaneEndpointLoadBalancer"`
+
+	// ControlPlaneEndpointInternal represents the endpoint used to communicate internally.
+	// +optional
+	ControlPlaneEndpointInternal clusterv1.APIEndpoint `json:"controlPlaneEndpointInternal"`
+
+	// ControlPlaneEndpointInternalLoadBalancer represents the LoadBalancer used for ControlPlaneEndpoint.
+	// +optional
+	ControlPlaneEndpointInternalLoadBalancer LoadBalancer `json:"controlPlaneInternalEndpointLoadBalancer"`
+}
+
+type LoadBalancer struct {
+	// Managed represents the way this loadbalancer is managed
+	// true: created/managed/deleted by CAPI,
+	// false: user supplied LB
+	// If mana
+	// +optional
+	Managed bool `json:"managed"`
+
+	// ID represents the ID of the loadbalancer
+	// +optional
+	ID string `json:"id"`
+
+	Pool LoadBalancerPoolReference
+}
+
+type LoadBalancerPoolReference struct {
+	// The unique identifier for this load balancer pool.
+	ID *string `json:"id"
 }
 
 type PowerVSVIP struct {
@@ -59,17 +94,14 @@ type PowerVSVIP struct {
 type IBMPowerVSClusterStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Ready bool `json:"ready"`
-	// +optional
+	Ready       bool               `json:"ready"`
 	APIEndpoint PowerVSAPIEndpoint `json:"apiEndpoint,omitempty"`
 }
 
 type PowerVSAPIEndpoint struct {
-	Address *string `json:"address"`
-	// +optional
-	// ExternalAddress *string `json:"externalAddress"`
-	// PortID is the ID for the network port gets created
-	//PortID *string `json:"portID"`
+	Address        *string `json:"address"`
+	LoadBalancerID *string `json:"load_balancer_id"`
+	PoolID         *string `json:"pool_id"`
 }
 
 // +kubebuilder:subresource:status

@@ -1,0 +1,313 @@
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: "${CLUSTER_NAME}"
+  name: "${CLUSTER_NAME}"
+  #namespace: "${NAMESPACE}"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - ${POD_CIDR:="192.168.0.0/16"}
+    serviceDomain: ${SERVICE_DOMAIN:="cluster.local"}
+    services:
+      cidrBlocks:
+        - ${SERVICE_CIDR:="10.128.0.0/12"}
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: IBMPowerVSCluster
+    name: "${CLUSTER_NAME}"
+    #namespace: "${NAMESPACE}"
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: KubeadmControlPlane
+    name: "${CLUSTER_NAME}-control-plane"
+    #namespace: "${NAMESPACE}"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSCluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: "${CLUSTER_NAME}"
+  name: "${CLUSTER_NAME}"
+spec:
+  cloudInstanceID: "${IBMPOWERVS_SERVICE_INSTANCE_ID}"
+  network: "${IBMPOWERVS_NETWORK_ID}"
+  vpcID: "${IBMPOWERVS_VPC_ID}"
+  vpcRegion: "${IBMPOWERVS_VPC_REGION}"
+---
+kind: KubeadmControlPlane
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+metadata:
+  name: "${CLUSTER_NAME}-control-plane"
+  #namespace: "${NAMESPACE}"
+spec:
+  version: "${KUBERNETES_VERSION}"
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT}
+  infrastructureTemplate:
+    kind: IBMPowerVSMachineTemplate
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    name: "${CLUSTER_NAME}-control-plane"
+    #namespace: "${NAMESPACE}"
+  kubeadmConfigSpec:
+    clusterConfiguration:
+      apiServer:
+        certSANs:
+          - localhost
+          - 127.0.0.1
+#          - "${IBMPOWERVS_VIP}"
+#          - "${IBMPOWERVS_VIP_EXTERNAL}"
+#      controlPlaneEndpoint: ${IBMPOWERVS_VIP}:6443
+      controllerManager:
+        extraArgs:
+          enable-hostpath-provisioner: "true"
+      dns: { }
+      etcd: { }
+      networking: { }
+      scheduler: { }
+    initConfiguration:
+      localAPIEndpoint:
+        advertiseAddress: ""
+        bindPort: 0
+      nodeRegistration:
+        criSocket: /var/run/containerd/containerd.sock
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
+          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+    joinConfiguration:
+      discovery:
+        bootstrapToken:
+#          apiServerEndpoint: ${IBMPOWERVS_VIP}:6443
+          token: ""
+          caCertHashes: [ ]
+          unsafeSkipCAVerification: false
+      nodeRegistration:
+        criSocket: /var/run/containerd/containerd.sock
+        kubeletExtraArgs:
+          cloud-provider: external
+          provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
+          eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+    useExperimentalRetryJoin: true
+    preKubeadmCommands:
+      - hostname "{{ v1.local_hostname }}"
+      - echo "{{ v1.local_hostname }}" >/etc/hostname
+      - |
+        cat <<EOF > /etc/cloud/cloud.cfg.d/01_disable_cloud_nw.cfg
+        #cloud-config
+        network:
+          config: disabled
+        EOF
+#    files:
+#      - path: /etc/keepalived/keepalived.conf
+#        content: |
+#          global_defs {
+#            default_interface env2
+#          }
+#
+#          vrrp_script check_apiserver {
+#            script "/etc/keepalived/check_apiserver.sh"
+#            interval 3
+#            weight -2
+#            fall 10
+#            rise 2
+#          }
+#
+#          vrrp_instance VI_1 {
+#            interface env2
+#
+#            state BACKUP
+#            virtual_router_id 51
+#            priority 100
+#            nopreempt
+#
+#            virtual_ipaddress {
+#              ${IBMPOWERVS_VIP}
+#            }
+#
+#            authentication {
+#              auth_type PASS
+#              auth_pass password!
+#            }
+#
+#            track_script {
+#              check_apiserver
+#            }
+#
+#            notify "/container/service/keepalived/assets/notify.sh"
+#          }
+#        owner: "root:root"
+#        permissions: "0644"
+#      - path: /etc/kubernetes/manifests/keepalived.yaml
+#        content: |
+#          apiVersion: v1
+#          kind: Pod
+#          metadata:
+#            creationTimestamp: null
+#            name: keepalived
+#            namespace: kube-system
+#          spec:
+#            containers:
+#            - image: quay.io/mkumatag/keepalive:latest
+#              name: keepalived
+#              resources: {}
+#              securityContext:
+#                capabilities:
+#                  add:
+#                  - NET_ADMIN
+#                  - NET_BROADCAST
+#                  - NET_RAW
+#              volumeMounts:
+#              - mountPath: /usr/local/etc/keepalived/keepalived.conf
+#                name: config
+#              - mountPath: /etc/keepalived/check_apiserver.sh
+#                name: check
+#            hostNetwork: true
+#            volumes:
+#            - hostPath:
+#                path: /etc/keepalived/keepalived.conf
+#              name: config
+#            - hostPath:
+#                path: /etc/keepalived/check_apiserver.sh
+#              name: check
+#          status: {}
+#        owner: "root:root"
+#        permissions: "0744"
+#      - path: /etc/keepalived/check_apiserver.sh
+#        content: |
+#          #!/bin/sh
+#
+#          APISERVER_DEST_PORT=6443
+#
+#          errorExit() {
+#              echo "*** $*" 1>&2
+#              exit 1
+#          }
+#
+#          curl --silent --max-time 2 --insecure https://localhost:$${APISERVER_DEST_PORT}/ -o /dev/null || errorExit "Error GET https://localhost:$${APISERVER_DEST_PORT}/"
+#          if ip addr | grep -q ${IBMPOWERVS_VIP}; then
+#              curl --silent --max-time 2 --insecure https://${IBMPOWERVS_VIP}:$${APISERVER_DEST_PORT}/ -o /dev/null || errorExit "Error GET https://${IBMPOWERVS_VIP}:$${APISERVER_DEST_PORT}/"
+#          fi
+#        owner: "root:root"
+#        permissions: "0744"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-control-plane"
+spec:
+  template:
+    spec:
+      name: "${CLUSTER_NAME}-control-plane"
+      cloudInstanceID: "${IBMPOWERVS_SERVICE_INSTANCE_ID}"
+      sshKey: "${IBMPOWERVS_SSHKEY_NAME}"
+      image: "${IBMPOWERVS_IMAGE_ID}"
+      machineType: s922
+      processor: shared
+      cores: "0.25"
+      memory: "8"
+      network: "${IBMPOWERVS_NETWORK_ID}"
+---
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: MachineDeployment
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  clusterName: "${CLUSTER_NAME}"
+  replicas: ${WORKER_MACHINE_COUNT}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "${CLUSTER_NAME}"
+      version: "${KUBERNETES_VERSION}"
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          kind: KubeadmConfigTemplate
+      infrastructureRef:
+        name: "${CLUSTER_NAME}-md-0"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        kind: IBMPowerVSMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  template:
+    spec:
+      name: "${CLUSTER_NAME}-md-0"
+      cloudInstanceID: "${IBMPOWERVS_SERVICE_INSTANCE_ID}"
+      sshKey: "${IBMPOWERVS_SSHKEY_NAME}"
+      image: "${IBMPOWERVS_IMAGE_ID}"
+      machineType: s922
+      processor: shared
+      cores: "0.25"
+      memory: "8"
+      network: "${IBMPOWERVS_NETWORK_ID}"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+kind: KubeadmConfigTemplate
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+    cluster.x-k8s.io/control-plane: ""
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  template:
+    spec:
+      clusterConfiguration:
+        apiServer:
+          certSANs:
+            - localhost
+            - 127.0.0.1
+            - "${IBMPOWERVS_VIP}"
+            - "${IBMPOWERVS_VIP_EXTERNAL}"
+        clusterName: ${CLUSTER_NAME}
+        controlPlaneEndpoint: ${IBMPOWERVS_VIP}:6443
+        controllerManager:
+          extraArgs:
+            enable-hostpath-provisioner: "true"
+        dns: {}
+        etcd: {}
+        kubernetesVersion: v1.19.8
+        networking:
+          dnsDomain: cluster.local
+          podSubnet: 192.168.0.0/16
+          serviceSubnet: 10.128.0.0/12
+        scheduler: {}
+      initConfiguration:
+        localAPIEndpoint:
+          advertiseAddress: ""
+          bindPort: 0
+        nodeRegistration:
+          criSocket: /var/run/containerd/containerd.sock
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
+            eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+      joinConfiguration:
+        discovery:
+          bootstrapToken:
+            apiServerEndpoint: ${IBMPOWERVS_VIP}:6443
+            token: ""
+            caCertHashes: []
+            unsafeSkipCAVerification: false
+        nodeRegistration:
+          criSocket: /var/run/containerd/containerd.sock
+          kubeletExtraArgs:
+            cloud-provider: external
+            provider-id: ibmpowervs://${CLUSTER_NAME}/'{{ v1.local_hostname }}'
+            eviction-hard: nodefs.available<0%,nodefs.inodesFree<0%,imagefs.available<0%
+      preKubeadmCommands:
+        - hostname "{{ v1.local_hostname }}"
+        - echo "{{ v1.local_hostname }}" >/etc/hostname
+        - |
+          cat <<EOF > /etc/cloud/cloud.cfg.d/01_disable_cloud_nw.cfg
+          #cloud-config
+          network:
+            config: disabled
+          EOF

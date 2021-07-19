@@ -18,6 +18,9 @@ package controllers
 
 import (
 	"context"
+	"fmt"
+	"github.com/IBM/go-sdk-core/core"
+	"github.com/IBM/vpc-go-sdk/vpcv1"
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/cloud/scope"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -102,20 +105,79 @@ func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScop
 		return ctrl.Result{}, nil
 	}
 
-	controlEP := ""
-	if clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress != nil {
-		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress
-	} else if clusterScope.IBMPowerVSCluster.Spec.VIP.Address != nil {
-		controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.Address
+	/*
+		controlEP := ""
+		if clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress != nil {
+			controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.ExternalAddress
+		} else if clusterScope.IBMPowerVSCluster.Spec.VIP.Address != nil {
+			controlEP = *clusterScope.IBMPowerVSCluster.Spec.VIP.Address
+		}
+
+		if controlEP != "" {
+			clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+				Host: controlEP,
+				Port: 6443,
+			}
+			clusterScope.IBMPowerVSCluster.Status.Ready = true
+		}
+	*/
+
+	if clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint.Host != "" {
+		return ctrl.Result{}, nil
 	}
 
-	if controlEP != "" {
-		clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
-			Host: controlEP,
-			Port: 6443,
-		}
-		clusterScope.IBMPowerVSCluster.Status.Ready = true
+	subnets, err := clusterScope.ListSubnets(clusterScope.IBMPowerVSCluster.Spec.VPCID)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to get the subnets for the VPC: %s",
+			clusterScope.IBMPowerVSCluster.Spec.VPCID)
 	}
+	if len(subnets) == 0 {
+		return ctrl.Result{}, errors.New("no subnets created for the vpc")
+	}
+
+	securityGroup, err := clusterScope.CreateSecurityGroup(clusterScope.IBMPowerVSCluster.Spec.VPCID, 6443)
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to create a security group for the VPC: %s",
+			clusterScope.IBMPowerVSCluster.Spec.VPCID)
+	}
+
+	lb, err := clusterScope.CreateLoadBalancer(
+		subnets, []vpcv1.SecurityGroupIdentityIntf{&vpcv1.SecurityGroupIdentityByID{ID: securityGroup.ID}})
+
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to create a load balancer")
+	}
+
+	if pollErr := clusterScope.WaitForUpdateLB(lb.ID); err != nil {
+		return ctrl.Result{}, errors.Wrapf(pollErr, "failed to get the LB in active and online state in 10min")
+	}
+
+	pool, err := clusterScope.CreateLoadBalancerPool(lb.ID, int64(clusterScope.APIServerPort()))
+	if err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to create a load balancer pool")
+	}
+
+	if pollErr := clusterScope.WaitForUpdateLB(lb.ID); err != nil {
+		return ctrl.Result{}, errors.Wrapf(pollErr, "failed to get the LB in active and online state in 10min")
+	}
+
+	if _, err := clusterScope.CreateLoadBalancerListener(lb.ID, pool.ID, int64(clusterScope.APIServerPort())); err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "failed to create a load balancer listner")
+	}
+
+	if clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint.Host == "" {
+		clusterScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
+			Host: *lb.Hostname,
+			Port: clusterScope.APIServerPort(),
+		}
+		clusterScope.IBMPowerVSCluster.Status.APIEndpoint = infrastructurev1alpha3.PowerVSAPIEndpoint{
+			Address:        core.StringPtr(fmt.Sprintf("%s:%d", *lb.Hostname, clusterScope.APIServerPort())),
+			LoadBalancerID: lb.ID,
+			PoolID:         pool.ID,
+		}
+	}
+
+	clusterScope.IBMPowerVSCluster.Status.Ready = true
 
 	//if clusterScope.IBMPowerVSCluster.Status.APIEndpoint.PortID == nil {
 	//	port, err := clusterScope.CreatePort()

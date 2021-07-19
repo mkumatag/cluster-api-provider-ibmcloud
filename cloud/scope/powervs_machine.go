@@ -6,8 +6,12 @@ import (
 	"fmt"
 	"github.com/IBM-Cloud/power-go-client/power/client/p_cloud_p_vm_instances"
 	"github.com/IBM-Cloud/power-go-client/power/models"
+	"github.com/IBM/go-sdk-core/core"
+	"github.com/IBM/vpc-go-sdk/vpcv1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/klog/v2"
 	"strconv"
 	"time"
 
@@ -23,6 +27,8 @@ import (
 )
 
 type PowerVSMachineScopeParams struct {
+	IBMVPCClients
+
 	Logger            logr.Logger
 	Client            client.Client
 	Cluster           *clusterv1.Cluster
@@ -32,6 +38,8 @@ type PowerVSMachineScopeParams struct {
 }
 
 type PowerVSMachineScope struct {
+	*IBMVPCClients
+
 	logr.Logger
 	client      client.Client
 	patchHelper *patch.Helper
@@ -73,6 +81,11 @@ func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineSc
 	}
 	zone := resource.RegionID
 
+	vpcClients, err := NewIBMVPCClients(params.IBMPowerVSCluster)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create NewIBMVPCClients")
+	}
+
 	c, err := NewIBMPowerVSClient(pkg.IBMCloud.Config.IAMAccessToken, pkg.IBMCloud.User.Account, m.Spec.CloudInstanceID, region, zone, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create NewIBMPowerVSClient")
@@ -88,6 +101,7 @@ func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineSc
 		patchHelper: helper,
 
 		IBMPowerVSClient:  c,
+		IBMVPCClients:     vpcClients,
 		Cluster:           params.Cluster,
 		Machine:           params.Machine,
 		IBMPowerVSMachine: params.IBMPowerVSMachine,
@@ -178,6 +192,49 @@ func (m *PowerVSMachineScope) CreateMachine() (*models.PVMInstanceReference, err
 		return nil, err
 	}
 	return nil, nil
+}
+
+func (m *PowerVSMachineScope) CreateLoadBalancerPoolMember(
+	lbID, poolID, ipaddress *string, port int64) (member *vpcv1.LoadBalancerPoolMember, err error) {
+	member, _, err = m.IBMVPCClients.VPCService.CreateLoadBalancerPoolMember(
+		&vpcv1.CreateLoadBalancerPoolMemberOptions{
+			LoadBalancerID: lbID,
+			PoolID:         poolID,
+			Port:           core.Int64Ptr(port),
+			Target: &vpcv1.LoadBalancerPoolMemberTargetPrototypeIP{
+				Address: ipaddress,
+			},
+			// TODO: if missed understand the impact
+			//Weight: core.Int64Ptr(100),
+		})
+	return
+}
+
+// WaitForUpdateLB is a function to wait till load balancer becomes active and online
+func (m *PowerVSMachineScope) WaitForUpdateLB(id *string) error {
+	return wait.PollImmediate(1*time.Minute, 10*time.Minute, func() (bool, error) {
+		lb, _, err := m.IBMVPCClients.VPCService.GetLoadBalancer(
+			&vpcv1.GetLoadBalancerOptions{
+				ID: id,
+			})
+		if err != nil {
+			return false, err
+		}
+		if *lb.ProvisioningStatus == vpcv1.LoadBalancerProvisioningStatusActiveConst &&
+			*lb.OperatingStatus == vpcv1.LoadBalancerOperatingStatusOnlineConst {
+			return true, nil
+		}
+		klog.Infof("LB create in-progress, current ProvisioningStatus: %s, OperatingStatus: %s",
+			*lb.ProvisioningStatus, *lb.OperatingStatus)
+		return false, nil
+	})
+}
+
+func (m *PowerVSMachineScope) APIServerPort() int32 {
+	if m.Cluster.Spec.ClusterNetwork != nil && m.Cluster.Spec.ClusterNetwork.APIServerPort != nil {
+		return *m.Cluster.Spec.ClusterNetwork.APIServerPort
+	}
+	return 6443
 }
 
 // Close closes the current scope persisting the cluster configuration and status.

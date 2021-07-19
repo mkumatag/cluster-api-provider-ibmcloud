@@ -1,0 +1,37 @@
+apiVersion: cluster.x-k8s.io/v1alpha3
+kind: Cluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: "mkumatag-cluster-1"
+  name: "mkumatag-cluster-1"
+  #namespace: "${NAMESPACE}"
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - "192.168.0.0/16"
+    serviceDomain: "cluster.local"
+    services:
+      cidrBlocks:
+        - "10.128.0.0/12"
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    kind: IBMPowerVSCluster
+    name: "mkumatag-cluster-1"
+    #namespace: "${NAMESPACE}"
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    kind: KubeadmControlPlane
+    name: mkumatag-cluster-1-control-plane
+    #namespace: "${NAMESPACE}"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+kind: IBMPowerVSCluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: "mkumatag-cluster-1"
+  name: "mkumatag-cluster-1"
+spec:
+  cloudInstanceID: "e449d86e-c3a0-4c07-959e-8557fdf55482"
+  network: "daf2b616-542b-47ed-8cec-ceaec1e90f4d"
+  vpcID: "r018-d4a39527-a80d-4de2-ab14-fc6f59232751"
