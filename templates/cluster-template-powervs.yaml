@@ -81,97 +81,69 @@ spec:
     useExperimentalRetryJoin: true
     preKubeadmCommands:
       - hostname "{{ v1.local_hostname }}"
+      - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
+      - echo "127.0.0.1   localhost" >>/etc/hosts
+      - echo "127.0.0.1   {{ v1.local_hostname }}" >>/etc/hosts
       - echo "{{ v1.local_hostname }}" >/etc/hostname
     files:
-      - path: /etc/keepalived/keepalived.conf
-        content: |
-          global_defs {
-            default_interface env2
-          }
-
-          vrrp_script check_apiserver {
-            script "/etc/keepalived/check_apiserver.sh"
-            interval 3
-            weight -2
-            fall 10
-            rise 2
-          }
-
-          vrrp_instance VI_1 {
-            interface env2
-
-            state BACKUP
-            virtual_router_id 51
-            priority 100
-            nopreempt
-
-            virtual_ipaddress {
-              ${IBMPOWERVS_VIP}
-            }
-
-            authentication {
-              auth_type PASS
-              auth_pass password!
-            }
-
-            track_script {
-              check_apiserver
-            }
-
-            notify "/container/service/keepalived/assets/notify.sh"
-          }
-        owner: "root:root"
-        permissions: "0644"
-      - path: /etc/kubernetes/manifests/keepalived.yaml
+      - path: /etc/kubernetes/manifests/kube-vip.yaml
         content: |
           apiVersion: v1
           kind: Pod
           metadata:
             creationTimestamp: null
-            name: keepalived
+            name: kube-vip
             namespace: kube-system
           spec:
             containers:
-            - image: quay.io/mkumatag/keepalive:latest
-              name: keepalived
+            - args:
+              - manager
+              env:
+              - name: vip_arp
+                value: "true"
+              - name: vip_interface
+                value: env2
+              - name: port
+                value: "6443"
+              - name: vip_cidr
+                value: ${IBMPOWERVS_VIP_CIDR}
+              - name: cp_enable
+                value: "true"
+              - name: cp_namespace
+                value: kube-system
+              - name: vip_ddns
+                value: "false"
+              - name: svc_enable
+                value: "true"
+              - name: vip_leaderelection
+                value: "true"
+              - name: vip_leaseduration
+                value: "5"
+              - name: vip_renewdeadline
+                value: "3"
+              - name: vip_retryperiod
+                value: "1"
+              - name: vip_address
+                value: ${IBMPOWERVS_VIP}
+              image: quay.io/mkumatag/kube-vip:v0.3.6
+              imagePullPolicy: Always
+              name: kube-vip
               resources: {}
               securityContext:
                 capabilities:
                   add:
                   - NET_ADMIN
-                  - NET_BROADCAST
                   - NET_RAW
+                  - SYS_TIME
               volumeMounts:
-              - mountPath: /usr/local/etc/keepalived/keepalived.conf
-                name: config
-              - mountPath: /etc/keepalived/check_apiserver.sh
-                name: check
+              - mountPath: /etc/kubernetes/admin.conf
+                name: kubeconfig
             hostNetwork: true
             volumes:
             - hostPath:
-                path: /etc/keepalived/keepalived.conf
-              name: config
-            - hostPath:
-                path: /etc/keepalived/check_apiserver.sh
-              name: check
+                path: /etc/kubernetes/admin.conf
+              name: kubeconfig
           status: {}
-        owner: "root:root"
-        permissions: "0744"
-      - path: /etc/keepalived/check_apiserver.sh
-        content: |
-          #!/bin/sh
-
-          APISERVER_DEST_PORT=6443
-
-          errorExit() {
-              echo "*** $*" 1>&2
-              exit 1
-          }
-
-          curl --silent --max-time 2 --insecure https://localhost:$${APISERVER_DEST_PORT}/ -o /dev/null || errorExit "Error GET https://localhost:$${APISERVER_DEST_PORT}/"
-          if ip addr | grep -q ${IBMPOWERVS_VIP}; then
-              curl --silent --max-time 2 --insecure https://${IBMPOWERVS_VIP}:$${APISERVER_DEST_PORT}/ -o /dev/null || errorExit "Error GET https://${IBMPOWERVS_VIP}:$${APISERVER_DEST_PORT}/"
-          fi
         owner: "root:root"
         permissions: "0744"
 ---
@@ -258,4 +230,7 @@ spec:
           name: '{{ v1.local_hostname }}'
       preKubeadmCommands:
         - hostname "{{ v1.local_hostname }}"
+        - echo "::1         ipv6-localhost ipv6-loopback" >/etc/hosts
+        - echo "127.0.0.1   localhost" >>/etc/hosts
+        - echo "127.0.0.1   {{ v1.local_hostname }}" >>/etc/hosts
         - echo "{{ v1.local_hostname }}" >/etc/hostname
