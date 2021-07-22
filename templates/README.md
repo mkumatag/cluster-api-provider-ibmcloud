@@ -30,7 +30,7 @@ IBMPOWERVS_SERVICE_INSTANCE_ID="e449d86e-c3a0-4c07-959e-8557fdf55482" \
 IBMPOWERVS_NETWORK_ID="07ba61c2-64a4-42ce-911e-a3b3656eab7c" \
 clusterctl config cluster ibm-powervs-1 --kubernetes-version v1.21.2 \
 --target-namespace default \
---control-plane-machine-count=1 \
---worker-machine-count=2 \
+--control-plane-machine-count=3 \
+--worker-machine-count=1 \
 --from ./cluster-template-powervs.yaml
 ```

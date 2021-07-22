@@ -6,13 +6,13 @@ import (
 	"fmt"
 	"github.com/IBM-Cloud/power-go-client/power/client/p_cloud_p_vm_instances"
 	"github.com/IBM-Cloud/power-go-client/power/models"
+	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha4"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"strconv"
 	"time"
 
 	"github.com/go-logr/logr"
-	infrav1 "github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha3"
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/pkg"
 	"github.com/pkg/errors"
 	"github.com/ppc64le-cloud/powervs-utils"
@@ -27,8 +27,8 @@ type PowerVSMachineScopeParams struct {
 	Client            client.Client
 	Cluster           *clusterv1.Cluster
 	Machine           *clusterv1.Machine
-	IBMPowerVSCluster *infrav1.IBMPowerVSCluster
-	IBMPowerVSMachine *infrav1.IBMPowerVSMachine
+	IBMPowerVSCluster *v1alpha4.IBMPowerVSCluster
+	IBMPowerVSMachine *v1alpha4.IBMPowerVSMachine
 }
 
 type PowerVSMachineScope struct {
@@ -39,8 +39,8 @@ type PowerVSMachineScope struct {
 	IBMPowerVSClient  *IBMPowerVSClient
 	Cluster           *clusterv1.Cluster
 	Machine           *clusterv1.Machine
-	IBMPowerVSCluster *infrav1.IBMPowerVSCluster
-	IBMPowerVSMachine *infrav1.IBMPowerVSMachine
+	IBMPowerVSCluster *v1alpha4.IBMPowerVSCluster
+	IBMPowerVSMachine *v1alpha4.IBMPowerVSMachine
 }
 
 func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineScope, error) {
