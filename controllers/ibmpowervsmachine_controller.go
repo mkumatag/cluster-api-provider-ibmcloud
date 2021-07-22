@@ -192,32 +192,7 @@ func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machi
 		}
 		machineScope.Info(*ins.PvmInstanceID)
 	}
-	//_, ok := machineScope.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
 	machineScope.IBMPowerVSMachine.Spec.ProviderID = pointer.StringPtr(fmt.Sprintf("ibmpowervs://%s/%s", machineScope.Machine.Spec.ClusterName, machineScope.IBMPowerVSMachine.Name))
-	/*
-		if ok {
-			//machineScope.IBMPowerVSMachine.Status.Ready = true
-			for _, address := range machineScope.IBMPowerVSMachine.Status.Addresses {
-				//spew.Dump(machineScope)
-				//if address.Type == v1.NodeExternalIP {
-				if address.Type == v1.NodeInternalIP {
-					machineScope.IBMPowerVSCluster.Status.APIEndpoint = infrastructurev1alpha3.PowerVSAPIEndpoint{
-						Address: &address.Address,
-					}
-					machineScope.IBMPowerVSCluster.Spec.ControlPlaneEndpoint = clusterv1.APIEndpoint{
-						Host: address.Address,
-						Port: 6443,
-					}
-				}
-			}
-			if err := r.Client.Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
-				return ctrl.Result{}, err
-			}
-			if err := r.Client.Status().Update(ctx, machineScope.IBMPowerVSCluster); err != nil {
-				return ctrl.Result{}, err
-			}
-		}
-	*/
 
 	return ctrl.Result{}, nil
 }
