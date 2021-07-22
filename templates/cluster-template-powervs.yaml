@@ -1,4 +1,4 @@
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: Cluster
 metadata:
   labels:
@@ -14,15 +14,15 @@ spec:
       cidrBlocks:
         - ${SERVICE_CIDR:="10.128.0.0/12"}
   infrastructureRef:
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
     kind: IBMPowerVSCluster
     name: "${CLUSTER_NAME}"
   controlPlaneRef:
-    apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+    apiVersion: controlplane.cluster.x-k8s.io/v1alpha4
     kind: KubeadmControlPlane
     name: "${CLUSTER_NAME}-control-plane"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: IBMPowerVSCluster
 metadata:
   labels:
@@ -36,16 +36,17 @@ spec:
     port: 6443
 ---
 kind: KubeadmControlPlane
-apiVersion: controlplane.cluster.x-k8s.io/v1alpha3
+apiVersion: controlplane.cluster.x-k8s.io/v1alpha4
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
 spec:
   version: "${KUBERNETES_VERSION}"
   replicas: ${CONTROL_PLANE_MACHINE_COUNT}
-  infrastructureTemplate:
-    kind: IBMPowerVSMachineTemplate
-    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
-    name: "${CLUSTER_NAME}-control-plane"
+  machineTemplate:
+    infrastructureRef:
+      kind: IBMPowerVSMachineTemplate
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
+      name: "${CLUSTER_NAME}-control-plane"
   kubeadmConfigSpec:
     clusterConfiguration:
       apiServer:
@@ -102,11 +103,11 @@ spec:
               - name: vip_arp
                 value: "true"
               - name: vip_interface
-                value: env2
+                value: "env2"
               - name: port
                 value: "6443"
               - name: vip_cidr
-                value: ${IBMPOWERVS_VIP_CIDR}
+                value: "${IBMPOWERVS_VIP_CIDR}"
               - name: cp_enable
                 value: "true"
               - name: cp_namespace
@@ -124,7 +125,7 @@ spec:
               - name: vip_retryperiod
                 value: "1"
               - name: vip_address
-                value: ${IBMPOWERVS_VIP}
+                value: "${IBMPOWERVS_VIP}"
               image: quay.io/mkumatag/kube-vip:v0.3.6
               imagePullPolicy: Always
               name: kube-vip
@@ -147,7 +148,7 @@ spec:
         owner: "root:root"
         permissions: "0744"
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: IBMPowerVSMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-control-plane"
@@ -164,7 +165,7 @@ spec:
       memory: "8"
       network: "${IBMPOWERVS_NETWORK_ID}"
 ---
-apiVersion: cluster.x-k8s.io/v1alpha3
+apiVersion: cluster.x-k8s.io/v1alpha4
 kind: MachineDeployment
 metadata:
   name: "${CLUSTER_NAME}-md-0"
@@ -180,14 +181,14 @@ spec:
       bootstrap:
         configRef:
           name: "${CLUSTER_NAME}-md-0"
-          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+          apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
           kind: KubeadmConfigTemplate
       infrastructureRef:
         name: "${CLUSTER_NAME}-md-0"
-        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
         kind: IBMPowerVSMachineTemplate
 ---
-apiVersion: infrastructure.cluster.x-k8s.io/v1alpha3
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha4
 kind: IBMPowerVSMachineTemplate
 metadata:
   name: "${CLUSTER_NAME}-md-0"
@@ -204,7 +205,7 @@ spec:
       memory: "8"
       network: "${IBMPOWERVS_NETWORK_ID}"
 ---
-apiVersion: bootstrap.cluster.x-k8s.io/v1alpha3
+apiVersion: bootstrap.cluster.x-k8s.io/v1alpha4
 kind: KubeadmConfigTemplate
 metadata:
   labels:

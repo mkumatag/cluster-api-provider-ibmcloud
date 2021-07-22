@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha4"
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/cloud/scope"
 	"github.com/pkg/errors"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -29,8 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	infrastructurev1alpha3 "github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha3"
 )
 
 // IBMPowerVSClusterReconciler reconciles a IBMPowerVSCluster object
@@ -47,7 +46,7 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	log := r.Log.WithValues("ibmpowervscluster", req.NamespacedName)
 
 	// Fetch the IBMPowerVSCluster instance
-	ibmCluster := &infrastructurev1alpha3.IBMPowerVSCluster{}
+	ibmCluster := &v1alpha4.IBMPowerVSCluster{}
 	err := r.Get(ctx, req.NamespacedName, ibmCluster)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -93,8 +92,8 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Re
 }
 
 func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScope *scope.PowerVSClusterScope) (ctrl.Result, error) {
-	if !controllerutil.ContainsFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer) {
-		controllerutil.AddFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer)
+	if !controllerutil.ContainsFinalizer(clusterScope.IBMPowerVSCluster, v1alpha4.IBMPowerVSClusterFinalizer) {
+		controllerutil.AddFinalizer(clusterScope.IBMPowerVSCluster, v1alpha4.IBMPowerVSClusterFinalizer)
 		return ctrl.Result{}, nil
 	}
 
@@ -104,12 +103,12 @@ func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScop
 }
 
 func (r *IBMPowerVSClusterReconciler) reconcileDelete(clusterScope *scope.PowerVSClusterScope) (ctrl.Result, error) {
-	controllerutil.RemoveFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer)
+	controllerutil.RemoveFinalizer(clusterScope.IBMPowerVSCluster, v1alpha4.IBMPowerVSClusterFinalizer)
 	return ctrl.Result{}, nil
 }
 
 func (r *IBMPowerVSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructurev1alpha3.IBMPowerVSCluster{}).
+		For(&v1alpha4.IBMPowerVSCluster{}).
 		Complete(r)
 }

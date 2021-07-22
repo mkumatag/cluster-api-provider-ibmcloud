@@ -3,11 +3,11 @@ package scope
 import (
 	"context"
 	"fmt"
+	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha4"
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/pkg"
 	utils "github.com/ppc64le-cloud/powervs-utils"
 
 	"github.com/go-logr/logr"
-	infrav1 "github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha3"
 	"github.com/pkg/errors"
 	"k8s.io/klog/v2/klogr"
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1alpha4"
@@ -19,7 +19,7 @@ type PowerVSClusterScopeParams struct {
 	Client            client.Client
 	Logger            logr.Logger
 	Cluster           *clusterv1.Cluster
-	IBMPowerVSCluster *infrav1.IBMPowerVSCluster
+	IBMPowerVSCluster *v1alpha4.IBMPowerVSCluster
 }
 
 type PowerVSClusterScope struct {
@@ -29,7 +29,7 @@ type PowerVSClusterScope struct {
 
 	IBMPowerVSClient  *IBMPowerVSClient
 	Cluster           *clusterv1.Cluster
-	IBMPowerVSCluster *infrav1.IBMPowerVSCluster
+	IBMPowerVSCluster *v1alpha4.IBMPowerVSCluster
 }
 
 func NewPowerVSClusterScope(params PowerVSClusterScopeParams) (*PowerVSClusterScope, error) {

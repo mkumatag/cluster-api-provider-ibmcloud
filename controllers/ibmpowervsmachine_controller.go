@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/IBM-Cloud/power-go-client/power/models"
 	"github.com/go-logr/logr"
+	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha4"
 	"github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/cloud/scope"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
@@ -32,8 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"time"
-
-	infrastructurev1alpha3 "github.com/kubernetes-sigs/cluster-api-provider-ibmcloud/api/v1alpha3"
 )
 
 // IBMPowerVSMachineReconciler reconciles a IBMPowerVSMachine object
@@ -49,7 +48,7 @@ type IBMPowerVSMachineReconciler struct {
 func (r *IBMPowerVSMachineReconciler) Reconcile(ctx context.Context, req ctrl.Request) (_ ctrl.Result, reterr error) {
 	log := r.Log.WithValues("ibmpowervsmachine", req.NamespacedName)
 
-	ibmPowerVSMachine := &infrastructurev1alpha3.IBMPowerVSMachine{}
+	ibmPowerVSMachine := &v1alpha4.IBMPowerVSMachine{}
 	err := r.Get(ctx, req.NamespacedName, ibmPowerVSMachine)
 	if err != nil {
 		if apierrors.IsNotFound(err) {
@@ -77,7 +76,7 @@ func (r *IBMPowerVSMachineReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	log = log.WithValues("cluster", cluster.Name)
 
-	ibmCluster := &infrastructurev1alpha3.IBMPowerVSCluster{}
+	ibmCluster := &v1alpha4.IBMPowerVSCluster{}
 	ibmPowerVSClusterName := client.ObjectKey{
 		Namespace: ibmPowerVSMachine.Namespace,
 		Name:      cluster.Spec.InfrastructureRef.Name,
@@ -118,7 +117,7 @@ func (r *IBMPowerVSMachineReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 func (r *IBMPowerVSMachineReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&infrastructurev1alpha3.IBMPowerVSMachine{}).
+		For(&v1alpha4.IBMPowerVSMachine{}).
 		Complete(r)
 }
 
@@ -128,7 +127,7 @@ func (r *IBMPowerVSMachineReconciler) reconcileDelete(scope *scope.PowerVSMachin
 	defer func() {
 		if reterr == nil {
 			// VSI is deleted so remove the finalizer.
-			controllerutil.RemoveFinalizer(scope.IBMPowerVSMachine, infrastructurev1alpha3.IBMPowerVSMachineFinalizer)
+			controllerutil.RemoveFinalizer(scope.IBMPowerVSMachine, v1alpha4.IBMPowerVSMachineFinalizer)
 		}
 	}()
 
@@ -150,7 +149,7 @@ func (r *IBMPowerVSMachineReconciler) getOrCreate(scope *scope.PowerVSMachineSco
 }
 
 func (r *IBMPowerVSMachineReconciler) reconcileNormal(ctx context.Context, machineScope *scope.PowerVSMachineScope) (ctrl.Result, error) {
-	controllerutil.AddFinalizer(machineScope.IBMPowerVSMachine, infrastructurev1alpha3.IBMPowerVSMachineFinalizer)
+	controllerutil.AddFinalizer(machineScope.IBMPowerVSMachine, v1alpha4.IBMPowerVSMachineFinalizer)
 
 	// Make sure bootstrap data is available and populated.
 	if machineScope.Machine.Spec.Bootstrap.DataSecretName == nil {
