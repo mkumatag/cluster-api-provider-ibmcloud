@@ -47,8 +47,6 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(req ctrl.Request) (_ ctrl.Result
 	ctx := context.Background()
 	log := r.Log.WithValues("ibmpowervscluster", req.NamespacedName)
 
-	// your logic here
-
 	// Fetch the IBMPowerVSCluster instance
 	ibmCluster := &infrastructurev1alpha3.IBMPowerVSCluster{}
 	err := r.Get(ctx, req.NamespacedName, ibmCluster)
@@ -103,41 +101,12 @@ func (r *IBMPowerVSClusterReconciler) reconcile(ctx context.Context, clusterScop
 
 	clusterScope.IBMPowerVSCluster.Status.Ready = true
 
-	//if clusterScope.IBMPowerVSCluster.Status.APIEndpoint.PortID == nil {
-	//	port, err := clusterScope.CreatePort()
-	//	if err != nil {
-	//		return ctrl.Result{}, errors.Wrap(err, "failed to create a port for APIEndpoint")
-	//	}
-	//
-	//	clusterScope.IBMPowerVSCluster.Status.APIEndpoint = infrastructurev1alpha3.PowerVSAPIEndpoint{
-	//		PortID:          port.PortID,
-	//		InternalAddress: port.IPAddress,
-	//	}
-	//}
-	//
-	//if clusterScope.IBMPowerVSCluster.Status.APIEndpoint.PortID != nil && clusterScope.IBMPowerVSCluster.Status.APIEndpoint.Address == nil {
-	//	portInfo, err := clusterScope.GetPort()
-	//	if err != nil {
-	//		return ctrl.Result{}, errors.Wrap(err, "failed to GetPort")
-	//	}
-	//	if portInfo.ExternalIP != "" {
-	//		clusterScope.IBMPowerVSCluster.Status.APIEndpoint.Address = &portInfo.ExternalIP
-	//	} else {
-	//		return ctrl.Result{}, errors.Wrap(err, "failed to the external IP address for the port")
-	//	}
-	//	clusterScope.IBMPowerVSCluster.Status.Ready = true
-	//}
-
 	return ctrl.Result{}, nil
 }
 
 func (r *IBMPowerVSClusterReconciler) reconcileDelete(clusterScope *scope.PowerVSClusterScope) (ctrl.Result, error) {
-	//if err := clusterScope.DeletePort(); err != nil {
-	//	return ctrl.Result{}, errors.Wrap(err, "failed to delete a port for APIEndpoint")
-	//} else {
 	controllerutil.RemoveFinalizer(clusterScope.IBMPowerVSCluster, infrastructurev1alpha3.IBMPowerVSClusterFinalizer)
 	return ctrl.Result{}, nil
-	//}
 }
 
 func (r *IBMPowerVSClusterReconciler) SetupWithManager(mgr ctrl.Manager) error {

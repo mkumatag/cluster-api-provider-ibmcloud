@@ -84,24 +84,3 @@ func (s *PowerVSClusterScope) PatchObject() error {
 func (s *PowerVSClusterScope) Close() error {
 	return s.PatchObject()
 }
-
-//func (s *PowerVSClusterScope) CreatePort() (*models.NetworkPort, error) {
-//	params := &p_cloud_networks.PcloudNetworksPortsPostParams{
-//		CloudInstanceID: s.IBMPowerVSCluster.Spec.CloudInstanceID,
-//		Body: &models.NetworkPortCreate{
-//			Description: s.IBMPowerVSCluster.Name + " Network Port",
-//		},
-//	}
-//	return s.IBMPowerVSClient.NetworkClient.CreatePort(s.IBMPowerVSCluster.Spec.Network, s.IBMPowerVSCluster.Spec.CloudInstanceID, params, TIMEOUT)
-//}
-
-//func (s *PowerVSClusterScope) DeletePort() (err error) {
-//	if s.IBMPowerVSCluster.Status.APIEndpoint.PortID != nil {
-//		_, err = s.IBMPowerVSClient.NetworkClient.DeletePort(s.IBMPowerVSCluster.Spec.Network, s.IBMPowerVSCluster.Spec.CloudInstanceID, *s.IBMPowerVSCluster.Status.APIEndpoint.PortID, TIMEOUT)
-//	}
-//	return
-//}
-
-//func (s *PowerVSClusterScope) GetPort() (*models.NetworkPort, error) {
-//	return s.IBMPowerVSClient.NetworkClient.GetPort(s.IBMPowerVSCluster.Spec.Network, s.IBMPowerVSCluster.Spec.CloudInstanceID, *s.IBMPowerVSCluster.Status.APIEndpoint.PortID, TIMEOUT)
-//}

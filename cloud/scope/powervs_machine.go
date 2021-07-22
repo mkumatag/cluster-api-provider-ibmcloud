@@ -96,20 +96,6 @@ func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineSc
 }
 
 func (m *PowerVSMachineScope) ensureInstanceUnique(instanceName string) (*models.PVMInstanceReference, error) {
-	//resource, err := pkg.IBMCloud.ResourceClient.GetInstance(m.IBMPowerVSMachine.Spec.CloudInstanceID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//region, err := utils.GetRegion(resource.RegionID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//session, err := ibmpisession.New(pkg.IBMCloud.Config.IAMAccessToken, region, true, 60*time.Minute, pkg.IBMCloud.User.Account, resource.RegionID)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//
-	//InstanceClient := instance.NewIBMPIInstanceClient(session, m.IBMPowerVSMachine.Spec.CloudInstanceID)
 	instances, err := m.IBMPowerVSClient.InstanceClient.GetAll(m.IBMPowerVSMachine.Spec.CloudInstanceID, 60*time.Minute)
 	if err != nil {
 		return nil, err
@@ -124,13 +110,6 @@ func (m *PowerVSMachineScope) ensureInstanceUnique(instanceName string) (*models
 
 func (m *PowerVSMachineScope) CreateMachine() (*models.PVMInstanceReference, error) {
 	s := m.IBMPowerVSMachine.Spec
-
-	//address := ""
-	//// Get the IP address from the cluster status APIEndpoint if machine is a controller-plane
-	//_, ok := m.IBMPowerVSMachine.Labels[clusterv1.MachineControlPlaneLabelName]
-	//if ok && m.IBMPowerVSCluster.Status.APIEndpoint.InternalAddress != nil {
-	//	address = *m.IBMPowerVSCluster.Status.APIEndpoint.InternalAddress
-	//}
 
 	instanceReply, err := m.ensureInstanceUnique(m.IBMPowerVSMachine.Name)
 	if err != nil {
@@ -194,11 +173,6 @@ func (m *PowerVSMachineScope) DeleteMachine() error {
 	return m.IBMPowerVSClient.InstanceClient.Delete(m.IBMPowerVSMachine.Status.InstanceID, m.IBMPowerVSMachine.Spec.CloudInstanceID, time.Hour)
 }
 
-//var hackCloudData = `#cloud-config
-//runcmd:
-//  - 'kubeadm init'
-//`
-
 // GetBootstrapData returns the base64 encoded bootstrap data from the secret in the Machine's bootstrap.dataSecretName
 func (m *PowerVSMachineScope) GetBootstrapData() (string, error) {
 	if m.Machine.Spec.Bootstrap.DataSecretName == nil {
@@ -217,5 +191,4 @@ func (m *PowerVSMachineScope) GetBootstrapData() (string, error) {
 	}
 
 	return base64.StdEncoding.EncodeToString(value), nil
-	//return base64.StdEncoding.EncodeToString([]byte(hackCloudData)), nil
 }
