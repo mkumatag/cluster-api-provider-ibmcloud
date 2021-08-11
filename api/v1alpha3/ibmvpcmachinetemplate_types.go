@@ -17,7 +17,7 @@ type IBMVPCMachineTemplateResource struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:resource:path=ibmvpcmachinetemplates,scope=Namespaced,categories=cluster-api
-// +kubebuilder:storageversion
+// +kubebuilder:subresource:status
 
 // IBMVPCMachineTemplate is the Schema for the IBMVPCMachinetemplates API
 type IBMVPCMachineTemplate struct {

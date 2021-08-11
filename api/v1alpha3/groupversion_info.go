@@ -15,8 +15,6 @@ limitations under the License.
 */
 
 // Package v1alpha3 contains API Schema definitions for the infrastructure v1alpha3 API group
-// +kubebuilder:object:generate=true
-// +groupName=infrastructure.cluster.x-k8s.io
 package v1alpha3
 
 import (
@@ -33,4 +31,6 @@ var (
 
 	// AddToScheme adds the types in this group-version to the given scheme.
 	AddToScheme = SchemeBuilder.AddToScheme
+
+	localSchemeBuilder = SchemeBuilder.SchemeBuilder
 )
