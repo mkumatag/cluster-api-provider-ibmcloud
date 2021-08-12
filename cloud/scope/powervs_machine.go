@@ -62,8 +62,9 @@ func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineSc
 	}
 
 	m := params.IBMPowerVSMachine
+	client := pkg.NewClient()
 
-	resource, err := pkg.IBMCloud.ResourceClient.GetInstance(m.Spec.CloudInstanceID)
+	resource, err := client.ResourceClient.GetInstance(m.Spec.CloudInstanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,7 @@ func NewPowerVSMachineScope(params PowerVSMachineScopeParams) (*PowerVSMachineSc
 	}
 	zone := resource.RegionID
 
-	c, err := NewIBMPowerVSClient(pkg.IBMCloud.Config.IAMAccessToken, pkg.IBMCloud.User.Account, m.Spec.CloudInstanceID, region, zone, true)
+	c, err := NewIBMPowerVSClient(client.Config.IAMAccessToken, client.User.Account, m.Spec.CloudInstanceID, region, zone, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create NewIBMPowerVSClient")
 	}

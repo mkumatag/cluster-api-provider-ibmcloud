@@ -65,6 +65,7 @@ func (r *IBMPowerVSClusterReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, nil
 	}
 
+	// Create the scope.
 	clusterScope, err := scope.NewPowerVSClusterScope(scope.PowerVSClusterScopeParams{
 		Client:            r.Client,
 		Logger:            log,

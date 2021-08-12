@@ -14,8 +14,6 @@ import (
 	"k8s.io/klog/v2"
 )
 
-var IBMCloud = NewClient()
-
 type Client struct {
 	*bxsession.Session
 	User           *User

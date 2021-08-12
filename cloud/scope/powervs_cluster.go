@@ -44,8 +44,10 @@ func NewPowerVSClusterScope(params PowerVSClusterScopeParams) (*PowerVSClusterSc
 		params.Logger = klogr.New()
 	}
 
+	client := pkg.NewClient()
+
 	spec := params.IBMPowerVSCluster.Spec
-	resource, err := pkg.IBMCloud.ResourceClient.GetInstance(spec.CloudInstanceID)
+	resource, err := client.ResourceClient.GetInstance(spec.CloudInstanceID)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,7 @@ func NewPowerVSClusterScope(params PowerVSClusterScopeParams) (*PowerVSClusterSc
 	}
 	zone := resource.RegionID
 
-	c, err := NewIBMPowerVSClient(pkg.IBMCloud.Config.IAMAccessToken, pkg.IBMCloud.User.Account, spec.CloudInstanceID, region, zone, true)
+	c, err := NewIBMPowerVSClient(client.Config.IAMAccessToken, client.User.Account, spec.CloudInstanceID, region, zone, true)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create NewIBMPowerVSClient")
 	}
