@@ -10,7 +10,7 @@ require (
 	github.com/joelanford/go-apidiff v0.4.0
 	github.com/onsi/ginkgo v1.16.5
 	gotest.tools/gotestsum v1.8.1
-	k8s.io/code-generator v0.24.0
+	k8s.io/code-generator v0.24.2
 	sigs.k8s.io/cluster-api/hack/tools v0.0.0-20220620121405-d55b8320aefa
 	sigs.k8s.io/controller-runtime/tools/setup-envtest v0.0.0-20211110210527-619e6b92dab9
 	sigs.k8s.io/controller-tools v0.8.0
