@@ -3,10 +3,10 @@ module sigs.k8s.io/cluster-api-provider-ibmcloud
 go 1.17
 
 require (
-	github.com/IBM-Cloud/power-go-client v1.1.9
+	github.com/IBM-Cloud/power-go-client v1.1.10
 	github.com/IBM/go-sdk-core/v5 v5.10.1
 	github.com/IBM/platform-services-go-sdk v0.26.1
-	github.com/IBM/vpc-go-sdk v0.21.0
+	github.com/IBM/vpc-go-sdk v0.22.0
 	github.com/go-logr/logr v1.2.0
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/golang/mock v1.6.0
@@ -19,7 +19,7 @@ require (
 	golang.org/x/text v0.3.7
 	k8s.io/api v0.24.2
 	k8s.io/apiextensions-apiserver v0.24.2
-	k8s.io/apimachinery v0.24.2
+	k8s.io/apimachinery v0.24.3
 	k8s.io/client-go v0.24.2
 	k8s.io/klog/v2 v2.60.1
 	k8s.io/utils v0.0.0-20220210201930-3a6ce19ff2f9
