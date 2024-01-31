@@ -13,7 +13,7 @@ require (
 	github.com/IBM-Cloud/power-go-client v1.5.7
 	github.com/IBM/go-sdk-core/v5 v5.15.0
 	github.com/IBM/platform-services-go-sdk v0.55.0
-	github.com/IBM/vpc-go-sdk v0.46.0
+	github.com/IBM/vpc-go-sdk v0.48.0
 	github.com/go-logr/logr v1.3.0
 	github.com/go-openapi/strfmt v0.21.9
 	github.com/golang-jwt/jwt v3.2.2+incompatible
@@ -23,7 +23,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/mock v0.3.0
-	golang.org/x/crypto v0.16.0
+	golang.org/x/crypto v0.17.0
 	golang.org/x/text v0.14.0
 	k8s.io/api v0.28.4
 	k8s.io/apiextensions-apiserver v0.28.4
