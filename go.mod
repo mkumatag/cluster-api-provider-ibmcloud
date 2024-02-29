@@ -11,14 +11,14 @@ replace (
 
 require (
 	github.com/IBM-Cloud/power-go-client v1.5.9
-	github.com/IBM/go-sdk-core/v5 v5.15.1
-	github.com/IBM/platform-services-go-sdk v0.59.0
+	github.com/IBM/go-sdk-core/v5 v5.15.3
+	github.com/IBM/platform-services-go-sdk v0.59.2
 	github.com/IBM/vpc-go-sdk v0.48.0
 	github.com/go-logr/logr v1.3.0
-	github.com/go-openapi/strfmt v0.22.0
+	github.com/go-openapi/strfmt v0.22.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible
 	github.com/onsi/ginkgo/v2 v2.13.1
-	github.com/onsi/gomega v1.30.0
+	github.com/onsi/gomega v1.31.1
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
@@ -145,7 +145,7 @@ require (
 	go.etcd.io/etcd/api/v3 v3.5.10 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.10 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.10 // indirect
-	go.mongodb.org/mongo-driver v1.13.1 // indirect
+	go.mongodb.org/mongo-driver v1.14.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.46.0 // indirect
 	go.opentelemetry.io/otel v1.20.0 // indirect
